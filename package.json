@@ -1,0 +1,25 @@
+{
+  "name": "j-homes-admin-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "sync-assets": "node src/sync-assets.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.13.0",
+    "mongodb-memory-server": "^10.2.3",
+    "mongoose": "^8.19.1",
+    "multer": "^2.0.2",
+    "openai": "^7.39.0",
+    "unpdf": "^1.9.1",
+    "xlsx": "^0.18.5"
+  }
+}
