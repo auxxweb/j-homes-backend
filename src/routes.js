@@ -20,6 +20,7 @@ const knowledgeUpload = multer({
 })
 
 function staffMay(req) {
+  if (req.method === 'POST' && req.path === '/account/password') return true
   if (req.method === 'GET' && req.path === '/sites') return true
   if ((req.method === 'GET' || req.method === 'POST') && /^\/sites\/[^/]+\/threads$/.test(req.path)) return true
   if ((req.method === 'GET' || req.method === 'DELETE') && /^\/threads\/[^/]+$/.test(req.path)) return true
@@ -220,6 +221,19 @@ export function apiRouter() {
 
   router.get('/auth/me', requireUser, (req, res) => {
     res.json({ ok: true, user: req.user })
+  })
+
+  router.post('/account/password', requireUser, async (req, res) => {
+    const current = String(req.body?.current || '')
+    const next = String(req.body?.next || '')
+    const user = await User.findById(req.user._id)
+    if (!user || !(await bcrypt.compare(current, user.passwordHash))) {
+      return res.status(400).json({ ok: false, error: 'Current password is incorrect.' })
+    }
+    if (next.length < 6) return res.status(400).json({ ok: false, error: 'Use a password of at least 6 characters.' })
+    user.passwordHash = await bcrypt.hash(next, 12)
+    await user.save()
+    res.json({ ok: true })
   })
 
   router.get('/sites', requireUser, async (req, res) => {

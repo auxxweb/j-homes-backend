@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { readFileSync } from 'node:fs'
-import { Entry, Page, Site, User } from './models.js'
+import { Checklist, Enquiry, Entry, Page, Site, User } from './models.js'
 
 const blankPages = [
   ['home', '/', 'Home', 'Home'],
@@ -68,6 +68,102 @@ async function ensureAdminUser() {
     return
   }
   console.log(`Admin ready: ${email}`)
+}
+
+export async function seedDemoLeads() {
+  const site = await Site.findOne({ slug: 'j-homes' })
+  if (!site) return
+  if ((await Enquiry.countDocuments({ site: site._id })) === 0) {
+    await Enquiry.insertMany([
+      {
+        site: site._id,
+        name: 'Anjali Menon',
+        phone: '9876543210',
+        email: 'anjali.menon@example.com',
+        location: 'Mulanthuruthy',
+        budget: '80-120',
+        stage: 'land',
+        message: 'We have a 10 cent plot and want a G+1 home. Looking for a first meeting.',
+        source: 'contact',
+        status: 'new',
+      },
+      {
+        site: site._id,
+        name: 'Rahul Krishnan',
+        phone: '9123456780',
+        email: 'rahul.krishnan@example.com',
+        location: 'Kochi',
+        budget: '120-plus',
+        stage: 'design',
+        message: 'Need architectural drawings and a turnkey quote for a 2,200 sq.ft house.',
+        source: 'contact',
+        status: 'new',
+      },
+      {
+        site: site._id,
+        name: 'Sneha Thomas',
+        phone: '9988776655',
+        email: 'sneha.thomas@example.com',
+        location: 'Chottanikkara',
+        budget: '50-80',
+        stage: 'interiors',
+        message: 'House is built. We want kitchen, wardrobes and living room interiors.',
+        source: 'contact',
+        status: 'new',
+      },
+    ])
+    console.log('Seeded 3 sample enquiries')
+  }
+  if ((await Checklist.countDocuments({ site: site._id })) === 0) {
+    await Checklist.insertMany([
+      {
+        site: site._id,
+        name: 'Vivek Nair',
+        phone: '9000011111',
+        location: 'Eruveli',
+        checklistDate: '2026-10-12',
+        signature: 'Vivek Nair',
+        submittedAt: new Date().toISOString(),
+        status: 'new',
+        answers: [
+          { section: 'Client', label: 'Name', value: 'Vivek Nair' },
+          { section: 'Site', label: 'Location', value: 'Eruveli' },
+          { section: 'Scope', label: 'Floors', value: 'G+1' },
+        ],
+      },
+      {
+        site: site._id,
+        name: 'Meera Joseph',
+        phone: '9000022222',
+        location: 'Thiruvaniyoor',
+        checklistDate: '2026-10-18',
+        signature: 'Meera Joseph',
+        submittedAt: new Date().toISOString(),
+        status: 'new',
+        answers: [
+          { section: 'Client', label: 'Name', value: 'Meera Joseph' },
+          { section: 'Site', label: 'Location', value: 'Thiruvaniyoor' },
+          { section: 'Scope', label: 'Plot', value: '50 cent, ground floor' },
+        ],
+      },
+      {
+        site: site._id,
+        name: 'Arun George',
+        phone: '9000033333',
+        location: 'Changanassery',
+        checklistDate: '2026-10-21',
+        signature: 'Arun George',
+        submittedAt: new Date().toISOString(),
+        status: 'new',
+        answers: [
+          { section: 'Client', label: 'Name', value: 'Arun George' },
+          { section: 'Site', label: 'Location', value: 'Changanassery' },
+          { section: 'Scope', label: 'Built-up', value: '3,500 sq.ft' },
+        ],
+      },
+    ])
+    console.log('Seeded 3 sample checklists')
+  }
 }
 
 export async function seedIfEmpty() {

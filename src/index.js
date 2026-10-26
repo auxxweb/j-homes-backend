@@ -7,7 +7,7 @@ import { connectDb } from './db.js'
 import { Entry, Page, Site } from './models.js'
 import { syncCloudinaryLibrary, upsertMediaFromContent } from './media-library.js'
 import { apiRouter } from './routes.js'
-import { seedIfEmpty } from './seed.js'
+import { seedDemoLeads, seedIfEmpty } from './seed.js'
 
 const app = express()
 const port = Number(process.env.PORT || 4000)
@@ -46,6 +46,7 @@ app.use((error, _req, res, _next) => {
 
 await connectDb()
 await seedIfEmpty()
+await seedDemoLeads()
 const home = await Site.findOne({ slug: 'j-homes' })
 if (home) {
   const [pages, entries] = await Promise.all([Page.find({ site: home._id }), Entry.find({ site: home._id })])
