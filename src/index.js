@@ -9,12 +9,29 @@ import { seedIfEmpty } from './seed.js'
 
 const app = express()
 const port = Number(process.env.PORT || 4000)
-const origins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175')
+const origins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175,https://www.jhomes.in,https://jhomes.in,https://admin.jhomes.in')
   .split(',')
   .map((item) => item.trim())
   .filter(Boolean)
 
-app.use(cors({ origin: origins }))
+function isAllowedOrigin(origin) {
+  if (!origin) return true
+  if (origins.includes(origin)) return true
+  try {
+    const { hostname } = new URL(origin)
+    return hostname === 'jhomes.in' || hostname.endsWith('.jhomes.in')
+  } catch {
+    return false
+  }
+}
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      callback(null, isAllowedOrigin(origin))
+    },
+  }),
+)
 app.use(express.json({ limit: '8mb' }))
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')))
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
