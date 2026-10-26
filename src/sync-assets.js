@@ -8,7 +8,10 @@ import { Entry, Media, Page, Site } from './models.js'
 
 dotenv.config({ override: true })
 
-const publicDir = path.resolve(process.cwd(), '../public')
+const publicDir = [
+  path.resolve(process.cwd(), '../frontend/public'),
+  path.resolve(process.cwd(), '../public'),
+].find((dir) => existsSync(dir)) || path.resolve(process.cwd(), '../frontend/public')
 const assetPattern = /\.(jpe?g|png|webp|gif|avif|mp4|webm|mov|pdf)$/i
 
 function publicIdFor(localPath) {

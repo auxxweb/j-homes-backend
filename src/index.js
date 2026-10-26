@@ -4,6 +4,8 @@ import cors from 'cors'
 import express from 'express'
 import path from 'node:path'
 import { connectDb } from './db.js'
+import { Entry, Page, Site } from './models.js'
+import { syncCloudinaryLibrary, upsertMediaFromContent } from './media-library.js'
 import { apiRouter } from './routes.js'
 import { seedIfEmpty } from './seed.js'
 
@@ -44,6 +46,12 @@ app.use((error, _req, res, _next) => {
 
 await connectDb()
 await seedIfEmpty()
+const home = await Site.findOne({ slug: 'j-homes' })
+if (home) {
+  const [pages, entries] = await Promise.all([Page.find({ site: home._id }), Entry.find({ site: home._id })])
+  await upsertMediaFromContent(home, pages, entries)
+  await syncCloudinaryLibrary(home._id).catch((error) => console.log(error?.message || 'Cloudinary library sync skipped.'))
+}
 app.listen(port, () => {
   console.log(`Admin API listening on http://localhost:${port}`)
 })

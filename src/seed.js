@@ -45,25 +45,33 @@ function entrySlug(collection, item, index) {
   return item.slug || `${collection}-${index + 1}`
 }
 
-export async function seedIfEmpty() {
+async function ensureAdminUser() {
   const email = (process.env.ADMIN_EMAIL || 'admin@jhomes.in').toLowerCase()
-  const password = process.env.ADMIN_PASSWORD || 'change-this-password'
+  const password = process.env.ADMIN_PASSWORD || '123456'
   const existingUser = await User.findOne({ email })
-  const passwordHash = await bcrypt.hash(password, 12)
   if (!existingUser) {
     await User.create({
       email,
       name: process.env.ADMIN_NAME || 'J Homes',
-      passwordHash,
+      passwordHash: await bcrypt.hash(password, 12),
       role: 'superadmin',
     })
-  } else {
-    existingUser.passwordHash = passwordHash
+    console.log(`Admin created: ${email}`)
+    return
+  }
+  if (process.env.ADMIN_PASSWORD_RESET === 'true') {
+    existingUser.passwordHash = await bcrypt.hash(password, 12)
     existingUser.name = process.env.ADMIN_NAME || existingUser.name
     existingUser.role = 'superadmin'
     await existingUser.save()
+    console.log(`Admin password reset: ${email}`)
+    return
   }
   console.log(`Admin ready: ${email}`)
+}
+
+export async function seedIfEmpty() {
+  await ensureAdminUser()
 
   if (await Site.exists({ slug: 'j-homes' })) return
   const snapshot = loadSnapshot()

@@ -6,6 +6,7 @@ import { answerQuestion, safeError } from './agent.js'
 import { acceptedFile, extensionOf, indexDocument, publicDoc, removeDocument, saveKnowledgeFile, storedPath } from './knowledge.js'
 import { ChatMessage, ChatThread, Checklist, Enquiry, Entry, KnowledgeDoc, Media, Page, Site, User } from './models.js'
 import { collectionNames, createBlankSite } from './seed.js'
+import { absoluteAssetUrl, rewritePublicAssets, syncCloudinaryLibrary, upsertMediaFromContent } from './media-library.js'
 import { removeStoredPdf, storePdf, storeUpload } from './uploads.js'
 
 const upload = multer({
@@ -445,19 +446,22 @@ export function apiRouter() {
 
   router.get('/sites/:id/media', requireUser, async (req, res) => {
     const siteId = req.params.id
-    const [media, site, pages, entries] = await Promise.all([
-      Media.find({ site: siteId }).sort({ createdAt: -1 }),
+    const [site, pages, entries] = await Promise.all([
       Site.findById(siteId),
       Page.find({ site: siteId }),
       Entry.find({ site: siteId }),
     ])
+    if (site) await upsertMediaFromContent(site, pages, entries)
+    await syncCloudinaryLibrary(siteId).catch(() => undefined)
+    const media = await Media.find({ site: siteId }).sort({ createdAt: -1 })
     const placements = mediaPlacements(site, pages, entries)
     res.json({
       ok: true,
       media: media.map((item) => ({
         ...item.toObject(),
+        url: absoluteAssetUrl(item.url),
         uses: placements
-          .filter((place) => assetMentioned(place.value, item))
+          .filter((place) => assetMentioned(place.value, item) || assetMentioned(absoluteAssetUrl(place.value), item))
           .map(({ label, detail, href }) => ({ label, detail, href })),
       })),
     })
@@ -482,11 +486,13 @@ export function apiRouter() {
   router.get('/public/:slug', async (req, res) => {
     const site = await Site.findOne({ slug: req.params.slug, status: 'published' })
     if (!site) return res.status(404).json({ ok: false, error: 'Website not found.' })
-    const [pages, entries] = await Promise.all([
+    const [pages, entries, media] = await Promise.all([
       Page.find({ site: site._id }).sort({ order: 1 }),
       Entry.find({ site: site._id }).sort({ order: 1 }),
+      Media.find({ site: site._id }),
     ])
-    res.json(publicSite(site, pages, entries))
+    res.set('Cache-Control', 'no-store')
+    res.json(rewritePublicAssets(publicSite(site, pages, entries), media))
   })
 
   router.post('/public/:slug/checklists', async (req, res) => {
